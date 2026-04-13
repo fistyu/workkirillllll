@@ -179,119 +179,82 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        // ✅ ВАШИ ДАННЫЕ (уже вставлены)
+        // ========== ВАШИ ДАННЫЕ ==========
         const URL = 'https://rmcerhigziyibvdbqanl.supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsemVqbXNqY2F0bHRvYnpmbnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNzA1MjQsImV4cCI6MjA5MTY0NjUyNH0.LOYiL2hRdfkTys5LWxjLgbqnfH8EyEozGleBTaUs6nA';
         const MY_ID = 'f0815a93-f244-45e5-958e-9c3b60cc96f1';
+        // ================================
 
         const supabase = createClient(URL, KEY);
 
-        // Глобальная функция для изменения статуса
+        // Функция для изменения статуса
         window.changeStatus = async (statusText, colorCode) => {
             console.log('🔄 Меняю статус на:', statusText);
-            console.log('👤 Для пользователя с ID:', MY_ID);
             
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .update({ 
-                        status: statusText, 
-                        color: colorCode 
-                    })
-                    .eq('id', MY_ID)
-                    .select();
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({ 
+                    status: statusText, 
+                    color: colorCode 
+                })
+                .eq('id', MY_ID);
 
-                if (error) {
-                    console.error('❌ Ошибка обновления:', error);
-                    showMessage('error', 'Ошибка! Проверьте RLS политики в Supabase');
-                } else {
-                    console.log('✅ Статус обновлён!', data);
-                    showMessage('success', `Статус изменён на "${statusText}"`);
-                    fetchGroup();  // обновляем список
-                }
-            } catch (err) {
-                console.error('❌ Исключение:', err);
-                showMessage('error', 'Произошла ошибка при обновлении статуса');
+            if (error) {
+                console.error('❌ Ошибка:', error);
+                alert('Ошибка: ' + error.message);
+            } else {
+                console.log('✅ Статус обновлён!');
+                fetchGroup();
             }
         };
 
         // Загрузка всех пользователей
         window.fetchGroup = async function() {
-            console.log('📡 Загружаю список пользователей...');
+            console.log('📡 Загружаю список...');
             
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .order('username', { ascending: true });
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('username', { ascending: true });
 
-                if (error) {
-                    console.error('❌ Ошибка загрузки:', error);
-                    document.getElementById('grouplist').innerHTML = 
-                        '<div style="text-align: center; padding: 40px; color: red;">❌ Ошибка подключения к базе данных</div>';
-                    return;
-                }
-
-                if (!data || data.length === 0) {
-                    document.getElementById('grouplist').innerHTML = 
-                        '<div style="text-align: center; padding: 40px;">👻 Нет пользователей. Добавьте их в таблицу profiles в Supabase!</div>';
-                    return;
-                }
-
-                console.log('✅ Получено пользователей:', data.length);
-                console.log('📋 Данные:', data);
-
-                // Рендерим список пользователей
-                const listHtml = data.map(user => `
-                    <div class="user-item">
-                        <div class="status-dot" style="background: ${user.color || '#cccccc'};"></div>
-                        <div style="flex-grow: 1;">
-                            <strong>${escapeHtml(user.username)}</strong>
-                            ${user.id === MY_ID ? ' <span class="badge" style="background: #22c55e;">это вы</span>' : ''}
-                            <br>
-                            <small style="color: #666;">${user.status || '😴 Статус не задан'}</small>
-                        </div>
-                    </div>
-                `).join('');
-                
-                document.getElementById('grouplist').innerHTML = listHtml;
-
-                // Показываем информацию о текущем пользователе
-                const me = data.find(u => u.id === MY_ID);
-                if (me) {
-                    document.getElementById('myName').innerHTML = me.username;
-                    document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
-                } else {
-                    document.getElementById('myName').innerHTML = '⚠️ Пользователь не найден!';
-                    document.getElementById('myStatusDisplay').innerHTML = '→ добавьте запись с вашим ID в таблицу profiles';
-                    console.warn('⚠️ Пользователь с ID', MY_ID, 'не найден в таблице!');
-                }
-            } catch (err) {
-                console.error('❌ Исключение при загрузке:', err);
+            if (error) {
+                console.error('❌ Ошибка загрузки:', error);
                 document.getElementById('grouplist').innerHTML = 
-                    '<div style="text-align: center; padding: 40px; color: red;">❌ Ошибка загрузки данных</div>';
+                    `<div class="error-message">❌ Ошибка: ${error.message}</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                document.getElementById('grouplist').innerHTML = 
+                    '<div style="text-align: center; padding: 40px;">👻 Нет пользователей</div>';
+                return;
+            }
+
+            // Рендерим список
+            const listHtml = data.map(user => `
+                <div class="user-item">
+                    <div class="status-dot" style="background: ${user.color || '#cccccc'};"></div>
+                    <div style="flex-grow: 1;">
+                        <strong>${escapeHtml(user.username)}</strong>
+                        ${user.id === MY_ID ? ' <span class="badge" style="background: #22c55e;">это вы</span>' : ''}
+                        <br>
+                        <small style="color: #666;">${user.status || '😴 Статус не задан'}</small>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('grouplist').innerHTML = listHtml;
+
+            // Информация о текущем пользователе
+            const me = data.find(u => u.id === MY_ID);
+            if (me) {
+                document.getElementById('myName').innerHTML = me.username;
+                document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
+            } else {
+                document.getElementById('myName').innerHTML = '⚠️ Пользователь не найден!';
             }
         };
 
-        // Функция для показа сообщений
-        function showMessage(type, text) {
-            const container = document.querySelector('.card:first-child');
-            const existingMsg = document.querySelector('.message-toast');
-            if (existingMsg) existingMsg.remove();
-            
-            const msgDiv = document.createElement('div');
-            msgDiv.className = type === 'error' ? 'error-message' : 'success-message';
-            msgDiv.classList.add('message-toast');
-            msgDiv.textContent = text;
-            
-            container.insertBefore(msgDiv, container.children[2]);
-            
-            setTimeout(() => {
-                msgDiv.remove();
-            }, 3000);
-        }
-
-        // Функция для защиты от XSS
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -302,42 +265,10 @@
             });
         }
 
-        // 🚀 REAL-TIME ПОДПИСКА
-        function setupRealtimeSubscription() {
-            const channel = supabase
-                .channel('profiles-changes')
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*',
-                        schema: 'public',
-                        table: 'profiles'
-                    },
-                    (payload) => {
-                        console.log('🔄 Реалтайм обновление:', payload);
-                        fetchGroup();
-                    }
-                )
-                .subscribe((status) => {
-                    console.log('📡 Realtime статус:', status);
-                    if (status === 'SUBSCRIBED') {
-                        console.log('✅ Real-time подключен!');
-                    }
-                });
-            
-            return channel;
-        }
-
-        // Запуск при загрузке страницы
+        // Запуск
         console.log('🚀 Приложение запущено');
         console.log('📌 Ваш ID:', MY_ID);
-        console.log('🔗 URL:', URL);
-        
-        // Первая загрузка
-        await fetchGroup();
-        
-        // Включаем real-time
-        setupRealtimeSubscription();
+        fetchGroup();
     </script>
 </body>
 </html>
