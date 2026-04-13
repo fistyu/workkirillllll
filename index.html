@@ -183,7 +183,7 @@
         const URL = 'https://rmcerhigziyibvdbqanl.supabase.co';
         const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsemVqbXNqY2F0bHRvYnpmbnFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYwNzA1MjQsImV4cCI6MjA5MTY0NjUyNH0.LOYiL2hRdfkTys5LWxjLgbqnfH8EyEozGleBTaUs6nA';
         const MY_ID = 'f0815a93-f244-45e5-958e-9c3b60cc96f1';
-        const TABLE_NAME = 'workkirlil';  // 👈 ВАША ТАБЛИЦА
+        const TABLE_NAME = 'workkirill';  // ✅ ПРАВИЛЬНОЕ НАЗВАНИЕ
         // ================================
 
         const supabase = createClient(URL, KEY);
@@ -191,7 +191,6 @@
         // Функция для изменения статуса
         window.changeStatus = async (statusText, colorCode) => {
             console.log('🔄 Меняю статус на:', statusText);
-            console.log('📋 Таблица:', TABLE_NAME);
             
             const { data, error } = await supabase
                 .from(TABLE_NAME)
@@ -256,7 +255,7 @@
                 document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
             } else {
                 document.getElementById('myName').innerHTML = '⚠️ Пользователь не найден!';
-                document.getElementById('myStatusDisplay').innerHTML = '→ добавьте себя в таблицу workkirlil';
+                document.getElementById('myStatusDisplay').innerHTML = '→ добавьте себя в таблицу workkirill';
             }
         };
 
