@@ -128,15 +128,6 @@
             margin: 16px 0;
             font-size: 14px;
         }
-
-        .success-message {
-            background: #dcfce7;
-            color: #16a34a;
-            padding: 12px;
-            border-radius: 12px;
-            margin: 16px 0;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
@@ -157,10 +148,10 @@
             <div style="margin-top: 24px;">
                 <strong>✨ Какой у тебя статус?</strong>
                 <div class="status-buttons">
-                    <button class="status-btn" style="background: #fef3c7; color: #d97706;" onclick="changeStatus('Учусь', '#fef3c7')">📚 Учусь</button>
-                    <button class="status-btn" style="background: #e8eef5; color: #4b5563;" onclick="changeStatus('Кофе-брейк', '#e8eef5')">☕ Кофе-брейк</button>
-                    <button class="status-btn" style="background: #dcfce7; color: #16a34a;" onclick="changeStatus('В игре', '#dcfce7')">🎮 В игре</button>
-                    <button class="status-btn" style="background: #fee2e2; color: #dc2626;" onclick="changeStatus('Дома', '#fee2e2')">🏠 Дома</button>
+                    <button class="status-btn" style="background: #fef3c7; color: #d97706;" onclick="changeStatus('Учусь')">📚 Учусь</button>
+                    <button class="status-btn" style="background: #e8eef5; color: #4b5563;" onclick="changeStatus('Кофе-брейк')">☕ Кофе-брейк</button>
+                    <button class="status-btn" style="background: #dcfce7; color: #16a34a;" onclick="changeStatus('В игре')">🎮 В игре</button>
+                    <button class="status-btn" style="background: #fee2e2; color: #dc2626;" onclick="changeStatus('Дома')">🏠 Дома</button>
                 </div>
             </div>
         </div>
@@ -179,101 +170,86 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        // ========== ВАШИ ДАННЫЕ ==========
-        const URL = 'https://ilzejmsjcatltobzfnqi.supabase.co';
-        const KEY = 'sb_publishable_LK_sgk6ANkJkXATU4Qi0fQ_JXqgJwFO';
-        const MY_ID = 'f0815a93-f244-45e5-958e-9c3b60cc96f1';
-        const TABLE_NAME = 'workkirill';  // ✅ ПРАВИЛЬНОЕ НАЗВАНИЕ
-        // ================================
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        const supabase = createClient(URL, KEY);
+    // ========== ВАШИ ДАННЫЕ ==========
+    const URL = 'https://ilzejmsjcatltobzfnqi.supabase.co';  // ← ИСПРАВЛЕНО
+    const KEY = 'sb_publishable_LK_sgk6ANkJkXATU4Qi0fQ_JXqgJwFO';  // ← ИСПРАВЛЕНО
+    const MY_ID = 'f0815a93-f244-45e5-958e-9c3b60cc96f1';
+    const TABLE_NAME = 'workkirill';  // ← ИСПРАВЛЕНО (1 буква l)
+    // ================================
 
-        // Функция для изменения статуса
-        window.changeStatus = async (statusText, colorCode) => {
-            console.log('🔄 Меняю статус на:', statusText);
-            
-            const { data, error } = await supabase
-                .from(TABLE_NAME)
-                .update({ 
-                    status: statusText, 
-                    color: colorCode 
-                })
-                .eq('id', MY_ID);
+    const supabase = createClient(URL, KEY);
 
-            if (error) {
-                console.error('❌ Ошибка:', error);
-                alert('Ошибка: ' + error.message);
-            } else {
-                console.log('✅ Статус обновлён!');
-                fetchGroup();
-            }
-        };
+    // Функция для изменения статуса
+    window.changeStatus = async (statusText) => {
+        console.log('🔄 Меняю статус на:', statusText);
+        
+        const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .update({ status: statusText })
+            .eq('id', MY_ID);
 
-        // Загрузка всех пользователей
-        window.fetchGroup = async function() {
-            console.log('📡 Загружаю список из таблицы', TABLE_NAME);
-            
-            const { data, error } = await supabase
-                .from(TABLE_NAME)
-                .select('*')
-                .order('username', { ascending: true });
+        if (error) {
+            console.error('❌ Ошибка:', error);
+            alert('Ошибка: ' + error.message);
+        } else {
+            console.log('✅ Статус обновлён!');
+            fetchGroup();
+        }
+    };
 
-            if (error) {
-                console.error('❌ Ошибка загрузки:', error);
-                document.getElementById('grouplist').innerHTML = 
-                    `<div class="error-message">❌ Ошибка: ${error.message}</div>`;
-                return;
-            }
+    // Загрузка всех пользователей
+    window.fetchGroup = async function() {
+        const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .select('*')
+            .order('username', { ascending: true });
 
-            if (!data || data.length === 0) {
-                document.getElementById('grouplist').innerHTML = 
-                    '<div style="text-align: center; padding: 40px;">👻 Нет пользователей. Добавьте себя в таблицу!</div>';
-                return;
-            }
-
-            console.log('✅ Загружено пользователей:', data.length);
-
-            // Рендерим список
-            const listHtml = data.map(user => `
-                <div class="user-item">
-                    <div class="status-dot" style="background: ${user.color || '#cccccc'};"></div>
-                    <div style="flex-grow: 1;">
-                        <strong>${escapeHtml(user.username)}</strong>
-                        ${user.id === MY_ID ? ' <span class="badge" style="background: #22c55e;">это вы</span>' : ''}
-                        <br>
-                        <small style="color: #666;">${user.status || '😴 Статус не задан'}</small>
-                    </div>
-                </div>
-            `).join('');
-            
-            document.getElementById('grouplist').innerHTML = listHtml;
-
-            // Информация о текущем пользователе
-            const me = data.find(u => u.id === MY_ID);
-            if (me) {
-                document.getElementById('myName').innerHTML = me.username;
-                document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
-            } else {
-                document.getElementById('myName').innerHTML = '⚠️ Пользователь не найден!';
-                document.getElementById('myStatusDisplay').innerHTML = '→ добавьте себя в таблицу workkirill';
-            }
-        };
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
+        if (error) {
+            console.error('Ошибка:', error);
+            document.getElementById('grouplist').innerHTML = 
+                `<div class="error-message">❌ Ошибка: ${error.message}</div>`;
+            return;
         }
 
-        // Запуск
-        console.log('🚀 Приложение запущено');
-        console.log('📌 Ваш ID:', MY_ID);
-        console.log('📋 Таблица:', TABLE_NAME);
-        fetchGroup();
-    </script>
-</body>
-</html>
+        if (!data || data.length === 0) {
+            document.getElementById('grouplist').innerHTML = 
+                '<div style="text-align: center; padding: 40px;">👻 Нет пользователей</div>';
+            return;
+        }
+
+        const listHtml = data.map(user => `
+            <div class="user-item">
+                <div class="status-dot" style="background: #e5e7eb;"></div>
+                <div style="flex-grow: 1;">
+                    <strong>${escapeHtml(user.username)}</strong>
+                    ${user.id === MY_ID ? ' <span class="badge" style="background: #22c55e;">это вы</span>' : ''}
+                    <br>
+                    <small style="color: #666;">${user.status || '😴 Статус не задан'}</small>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('grouplist').innerHTML = listHtml;
+
+        const me = data.find(u => u.id === MY_ID);
+        if (me) {
+            document.getElementById('myName').innerHTML = escapeHtml(me.username);
+            document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
+        }
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    fetchGroup();
+</script>
