@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Монитор статусов группы</title>
+    <title>Монитор статусов - Вход через Google</title>
     <style>
         * {
             margin: 0;
@@ -88,6 +88,10 @@
             border-radius: 16px;
             padding: 16px;
             margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .badge {
@@ -119,6 +123,17 @@
             font-weight: 500;
         }
 
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
         .realtime-badge {
             background: #22c55e;
             color: white;
@@ -143,100 +158,191 @@
             color: #999;
             padding: 40px;
         }
+
+        .login-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .google-btn {
+            background: white;
+            color: #444;
+            border: 1px solid #ddd;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .google-btn:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>
-                📊 Монитор группы
-                <span class="realtime-badge">🟢 LIVE</span>
-            </h1>
-            <p class="subtitle">Обновляется в реальном времени</p>
-
-            <div class="my-profile" id="myInfo">
-                <span class="badge">Вы</span>
-                <span id="myName">Загрузка...</span>
-                <span id="myStatusDisplay" style="margin-left: 12px; color: #666;"></span>
-            </div>
-
-            <div style="margin-top: 24px;">
-                <strong>✨ Какой у тебя статус?</strong>
-                <div class="status-buttons">
-                    <button class="status-btn" style="background: #fef3c7; color: #d97706;" onclick="changeStatus('📚 Учусь')">📚 Учусь</button>
-                    <button class="status-btn" style="background: #e8eef5; color: #4b5563;" onclick="changeStatus('☕ Кофе-брейк')">☕ Кофе-брейк</button>
-                    <button class="status-btn" style="background: #dcfce7; color: #16a34a;" onclick="changeStatus('🎮 В игре')">🎮 В игре</button>
-                    <button class="status-btn" style="background: #fee2e2; color: #dc2626;" onclick="changeStatus('🏠 Дома')">🏠 Дома</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <strong>👥 Участники группы</strong>
-                <button class="refresh-btn" onclick="fetchGroup()">⟳ Обновить</button>
-            </div>
-            <div id="grouplist">
-                <div class="loading">Загрузка...</div>
-            </div>
-        </div>
+    <div class="container" id="app">
+        <div class="loading">Загрузка...</div>
     </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        // ========== ВАШИ ДАННЫЕ (ПРОВЕРЕНО) ==========
+        // ========== ТВОИ ДАННЫЕ ==========
         const URL = 'https://ilzejmsjcatltobzfnqi.supabase.co';
         const KEY = 'sb_publishable_LK_sgk6ANkJkXATU4Qi0fQ_JXqgJwFO';
-        const MY_ID = 'f0815a93-f244-45e5-958e-9c3b60cc96f1';
-        const TABLE_NAME = 'workkirill';  // ← ТОЧНОЕ ИМЯ ИЗ SUPABASE
-        // =============================================
+        const TABLE_NAME = 'workkirill';
+        // =================================
 
         const supabase = createClient(URL, KEY);
 
-        // Функция для изменения статуса
-        window.changeStatus = async (statusText) => {
-            console.log('🔄 Меняю статус на:', statusText);
+        // --- Страница входа ---
+        function renderLoginPage() {
+            document.getElementById('app').innerHTML = `
+                <div class="card login-container">
+                    <h1>📊 Монитор группы</h1>
+                    <p class="subtitle">Войдите, чтобы увидеть статусы участников</p>
+                    <button id="googleSignInBtn" class="google-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                        Войти через Google
+                    </button>
+                </div>
+            `;
+            document.getElementById('googleSignInBtn').onclick = () => signInWithGoogle();
+        }
+
+        // --- Основное приложение ---
+        function renderMainApp(user) {
+            const avatarUrl = user.user_metadata?.avatar_url || '';
+            const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Пользователь';
             
-            const { data, error } = await supabase
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h1>📊 Монитор группы <span class="realtime-badge">🟢 LIVE</span></h1>
+                            <p class="subtitle">Обновляется в реальном времени</p>
+                        </div>
+                        <button id="logoutBtn" class="logout-btn">🚪 Выйти</button>
+                    </div>
+
+                    <div class="my-profile">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            ${avatarUrl ? `<img src="${avatarUrl}" class="user-avatar" alt="avatar">` : ''}
+                            <div>
+                                <span class="badge">Вы</span>
+                                <strong id="myName">${escapeHtml(userName)}</strong>
+                                <span id="myStatusDisplay" style="margin-left: 12px; color: #666;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px;">
+                        <strong>✨ Какой у тебя статус?</strong>
+                        <div class="status-buttons">
+                            <button class="status-btn" style="background: #fef3c7; color: #d97706;" data-status="📚 Учусь">📚 Учусь</button>
+                            <button class="status-btn" style="background: #e8eef5; color: #4b5563;" data-status="☕ Кофе-брейк">☕ Кофе-брейк</button>
+                            <button class="status-btn" style="background: #dcfce7; color: #16a34a;" data-status="🎮 В игре">🎮 В игре</button>
+                            <button class="status-btn" style="background: #fee2e2; color: #dc2626;" data-status="🏠 Дома">🏠 Дома</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <strong>👥 Участники группы</strong>
+                        <button class="refresh-btn" id="refreshBtn">⟳ Обновить</button>
+                    </div>
+                    <div id="grouplist"><div class="loading">Загрузка...</div></div>
+                </div>
+            `;
+
+            document.getElementById('logoutBtn').onclick = () => signOut();
+            document.getElementById('refreshBtn').onclick = () => fetchGroup();
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.onclick = () => changeStatus(btn.dataset.status);
+            });
+
+            fetchGroup();
+        }
+
+        // --- Вход через Google ---
+        async function signInWithGoogle() {
+            try {
+                const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.href
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                console.error('Ошибка входа:', error.message);
+                alert('Ошибка входа: ' + error.message);
+            }
+        }
+
+        // --- Выход ---
+        async function signOut() {
+            await supabase.auth.signOut();
+            checkUser();
+        }
+
+        // --- Смена статуса ---
+        window.changeStatus = async (statusText) => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { error } = await supabase
                 .from(TABLE_NAME)
                 .update({ status: statusText })
-                .eq('id', MY_ID);
+                .eq('id', user.id);
 
             if (error) {
-                console.error('❌ Ошибка:', error);
+                console.error('Ошибка:', error);
                 alert('Ошибка: ' + error.message);
             } else {
-                console.log('✅ Статус обновлён!');
                 fetchGroup();
             }
         };
 
-        // Загрузка всех пользователей
+        // --- Загрузка списка участников ---
         window.fetchGroup = async function() {
-            console.log('📡 Загружаю список из таблицы', TABLE_NAME);
-            
             const { data, error } = await supabase
                 .from(TABLE_NAME)
                 .select('*')
                 .order('username', { ascending: true });
 
             if (error) {
-                console.error('❌ Ошибка загрузки:', error);
-                document.getElementById('grouplist').innerHTML = 
-                    `<div class="error-message">❌ Ошибка: ${error.message}</div>`;
+                document.getElementById('grouplist').innerHTML = `<div class="error-message">❌ Ошибка: ${error.message}</div>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                document.getElementById('grouplist').innerHTML = 
-                    '<div class="loading">👻 Нет пользователей. Добавьте себя в таблицу!</div>';
+                document.getElementById('grouplist').innerHTML = '<div class="loading">👻 Пока никого нет</div>';
                 return;
             }
 
-            console.log('✅ Загружено пользователей:', data.length);
+            const { data: { user } } = await supabase.auth.getUser();
+            const currentUserId = user?.id;
 
-            // Функция для получения цвета статуса
             const getStatusColor = (status) => {
                 const colors = {
                     '📚 Учусь': '#fef3c7',
@@ -247,31 +353,23 @@
                 return colors[status] || '#e5e7eb';
             };
 
-            // Рендерим список
-            const listHtml = data.map(user => {
-                const statusColor = getStatusColor(user.status);
-                return `
+            const listHtml = data.map(u => `
                 <div class="user-item">
-                    <div class="status-dot" style="background: ${statusColor};"></div>
+                    <div class="status-dot" style="background: ${getStatusColor(u.status)};"></div>
                     <div style="flex-grow: 1;">
-                        <strong>${escapeHtml(user.username)}</strong>
-                        ${user.id === MY_ID ? '<span class="badge-me">это вы</span>' : ''}
+                        <strong>${escapeHtml(u.username)}</strong>
+                        ${u.id === currentUserId ? '<span class="badge-me">это вы</span>' : ''}
                         <br>
-                        <small style="color: #666;">${user.status || '😴 Статус не задан'}</small>
+                        <small style="color: #666;">${u.status || '😴 Статус не задан'}</small>
                     </div>
                 </div>
-            `}).join('');
+            `).join('');
             
             document.getElementById('grouplist').innerHTML = listHtml;
 
-            // Информация о текущем пользователе
-            const me = data.find(u => u.id === MY_ID);
-            if (me) {
-                document.getElementById('myName').innerHTML = escapeHtml(me.username);
+            const me = data.find(u => u.id === currentUserId);
+            if (me && document.getElementById('myStatusDisplay')) {
                 document.getElementById('myStatusDisplay').innerHTML = `→ ${me.status || 'статус не задан'}`;
-            } else {
-                document.getElementById('myName').innerHTML = '⚠️ Пользователь не найден!';
-                document.getElementById('myStatusDisplay').innerHTML = '→ добавьте себя в таблицу workkiriill';
             }
         };
 
@@ -285,11 +383,47 @@
             });
         }
 
-        // Запуск
-        console.log('🚀 Приложение запущено');
-        console.log('📌 Ваш ID:', MY_ID);
-        console.log('📋 Таблица:', TABLE_NAME);
-        fetchGroup();
+        // --- Создание профиля при первом входе ---
+        async function ensureProfile(user) {
+            if (!user) return;
+            
+            const { data: existing } = await supabase
+                .from(TABLE_NAME)
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+            
+            if (!existing) {
+                const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Новый пользователь';
+                await supabase.from(TABLE_NAME).insert({
+                    id: user.id,
+                    username: userName,
+                    status: '🎉 Только что зашел'
+                });
+            }
+        }
+
+        // --- Проверка авторизации ---
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+                await ensureProfile(user);
+                renderMainApp(user);
+            } else {
+                renderLoginPage();
+            }
+        }
+
+        // --- Слушаем изменения входа/выхода ---
+        supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                checkUser();
+            }
+        });
+
+        // --- Запуск ---
+        checkUser();
     </script>
 </body>
 </html>
