@@ -289,7 +289,7 @@
                 const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
-                        redirectTo: window.location.origin + window.location.pathname // только origin+path, без параметров
+                        redirectTo: window.location.href
                     }
                 });
                 if (error) throw error;
@@ -302,8 +302,6 @@
         // --- Выход ---
         async function signOut() {
             await supabase.auth.signOut();
-            // Очищаем URL от параметров сессии
-            window.history.replaceState({}, document.title, window.location.pathname);
             checkUser();
         }
 
@@ -405,25 +403,8 @@
             }
         }
 
-        // --- Проверка сессии из URL (после редиректа от Google) ---
-        async function getSessionFromUrl() {
-            const { data, error } = await supabase.auth.getSessionFromUrl();
-            if (error) {
-                console.error('Ошибка получения сессии из URL:', error.message);
-            }
-            // Очищаем URL от параметров сессии
-            if (window.location.hash || window.location.search) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            return data?.session || null;
-        }
-
         // --- Проверка авторизации ---
         async function checkUser() {
-            // Сначала пробуем получить сессию из URL (после редиректа с Google)
-            await getSessionFromUrl();
-            
-            // Теперь проверяем текущего пользователя
             const { data: { user } } = await supabase.auth.getUser();
             
             if (user) {
